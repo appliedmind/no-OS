@@ -357,28 +357,36 @@ int32_t hmc7044_clk_round_rate(struct hmc7044_dev *dev, uint32_t rate,
 /**
  * Set channel rate.
  * @param dev - The device structure.
- * @param chan - Channel number.
+ * @param chan_num - Channel number.
  * @param rate - Channel rate.
  * @return SUCCESS in case of success, negative error code otherwise.
  */
-int32_t hmc7044_clk_set_rate(struct hmc7044_dev *dev, uint32_t chan,
+int32_t hmc7044_clk_set_rate(struct hmc7044_dev *dev, uint32_t chan_num,
 			     uint64_t rate)
 {
 	uint32_t div;
 	int32_t ret;
+	struct hmc7044_chan_spec *chan = NULL;
 
-	if (chan >= dev->num_channels)
+	/* Find the reqested channel number */
+	for (int i=0; i < dev->num_channels; i++) {
+		if (dev->channels[i].num == chan_num) {
+			chan = &dev->channels[i];
+			break;
+		}
+	}
+	if (chan == NULL )
 		return FAILURE;
 
 	div = hmc7044_calc_out_div(rate, dev->pll2_freq);
-	dev->channels[chan].divider = div;
+	chan->divider = div;
 
-	ret = hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_1(chan),
+	ret = hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_1(chan->num),
 			    HMC7044_DIV_LSB(div));
 	if(ret < 0)
 		return ret;
 
-	return hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_2(chan),
+	return hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_2(chan->num),
 			     HMC7044_DIV_MSB(div));
 }
 
@@ -602,6 +610,7 @@ static int32_t hmc7044_setup(struct hmc7044_dev *dev)
 		if (chan->num >= HMC7044_NUM_CHAN || chan->disable)
 			continue;
 
+		printf("hmc7044: programming chan:%d divider:%d\n", chan->num, chan->divider);
 		hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_1(chan->num),
 			      HMC7044_DIV_LSB(chan->divider));
 		hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_2(chan->num),
