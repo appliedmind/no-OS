@@ -357,28 +357,36 @@ int32_t hmc7044_clk_round_rate(struct hmc7044_dev *dev, uint32_t rate,
 /**
  * Set channel rate.
  * @param dev - The device structure.
- * @param chan - Channel number.
+ * @param chan_num - Channel number.
  * @param rate - Channel rate.
  * @return SUCCESS in case of success, negative error code otherwise.
  */
-int32_t hmc7044_clk_set_rate(struct hmc7044_dev *dev, uint32_t chan,
+int32_t hmc7044_clk_set_rate(struct hmc7044_dev *dev, uint32_t chan_num,
 			     uint64_t rate)
 {
 	uint32_t div;
 	int32_t ret;
+	struct hmc7044_chan_spec *chan = NULL;
 
-	if (chan >= dev->num_channels)
+	/* Find the reqested channel number */
+	for (int i=0; i < dev->num_channels; i++) {
+		if (dev->channels[i].num == chan_num) {
+			chan = &dev->channels[i];
+			break;
+		}
+	}
+	if (chan == NULL )
 		return FAILURE;
 
 	div = hmc7044_calc_out_div(rate, dev->pll2_freq);
-	dev->channels[chan].divider = div;
+	chan->divider = div;
 
-	ret = hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_1(chan),
+	ret = hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_1(chan->num),
 			    HMC7044_DIV_LSB(div));
 	if(ret < 0)
 		return ret;
 
-	return hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_2(chan),
+	return hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_2(chan->num),
 			     HMC7044_DIV_MSB(div));
 }
 
@@ -602,6 +610,7 @@ static int32_t hmc7044_setup(struct hmc7044_dev *dev)
 		if (chan->num >= HMC7044_NUM_CHAN || chan->disable)
 			continue;
 
+		printf("hmc7044: programming chan:%d divider:%d\n", chan->num, chan->divider);
 		hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_1(chan->num),
 			      HMC7044_DIV_LSB(chan->divider));
 		hmc7044_write(dev, HMC7044_REG_CH_OUT_CRTL_2(chan->num),
@@ -637,7 +646,9 @@ static int32_t hmc7044_setup(struct hmc7044_dev *dev)
 	mdelay(1);
 	hmc7044_write(dev, HMC7044_REG_REQ_MODE_0,
 		      (dev->high_performance_mode_clock_dist_en ?
-		       HMC7044_HIGH_PERF_DISTRIB_PATH : 0));
+		       HMC7044_HIGH_PERF_DISTRIB_PATH : 0) |
+		      (dev->high_performance_mode_pll_vco_en ?
+		       HMC7044_HIGH_PERF_PLL_VCO : 0));
 	mdelay(1);
 
 	return SUCCESS;
@@ -804,6 +815,8 @@ int32_t hmc7044_init(struct hmc7044_dev **device,
 	dev->clkin1_vcoin_en = init_param->clkin1_vcoin_en;
 	dev->high_performance_mode_clock_dist_en =
 		init_param->high_performance_mode_clock_dist_en;
+	dev->high_performance_mode_pll_vco_en =
+		init_param->high_performance_mode_pll_vco_en;
 	dev->rf_reseeder_en = !init_param->rf_reseeder_disable;
 	dev->sync_pin_mode = init_param->sync_pin_mode;
 	dev->pulse_gen_mode = init_param->pulse_gen_mode;
