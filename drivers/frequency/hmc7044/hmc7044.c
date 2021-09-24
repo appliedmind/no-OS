@@ -326,13 +326,23 @@ uint32_t hmc7044_calc_out_div(uint32_t rate,
  * @param rate - Channel rate.
  * @return SUCCESS in case of success, negative error code otherwise.
  */
-int32_t hmc7044_clk_recalc_rate(struct hmc7044_dev *dev, uint32_t chan,
+int32_t hmc7044_clk_recalc_rate(struct hmc7044_dev *dev, uint32_t chan_num,
 				uint64_t *rate)
 {
-	if (chan > dev->num_channels)
+	int i;
+	struct hmc7044_chan_spec *chan = NULL;
+
+	/* Find the reqested channel number */
+	for (i = 0; i < dev->num_channels; i++) {
+		if (dev->channels[i].num == chan_num) {
+			chan = &dev->channels[i];
+			break;
+		}
+	}
+	if (chan == NULL )
 		return FAILURE;
 
-	*rate = dev->pll2_freq / dev->channels[chan].divider;
+	*rate = dev->pll2_freq / chan->divider;
 
 	return SUCCESS;
 }
@@ -366,10 +376,11 @@ int32_t hmc7044_clk_set_rate(struct hmc7044_dev *dev, uint32_t chan_num,
 {
 	uint32_t div;
 	int32_t ret;
+	int i;
 	struct hmc7044_chan_spec *chan = NULL;
 
 	/* Find the reqested channel number */
-	for (int i=0; i < dev->num_channels; i++) {
+	for (i = 0; i < dev->num_channels; i++) {
 		if (dev->channels[i].num == chan_num) {
 			chan = &dev->channels[i];
 			break;
