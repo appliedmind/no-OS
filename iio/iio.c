@@ -525,7 +525,7 @@ static int32_t debug_reg_write(struct iio_interface *dev, const char *buf,
 	return len;
 }
 
-static int32_t __iio_str_parse(char *buf, int32_t *integer, int32_t *fract,
+static int32_t __iio_str_parse(char *buf, int32_t *integer, int32_t *_fract,
 			       bool scale_db)
 {
 	char *p;
@@ -546,7 +546,7 @@ static int32_t __iio_str_parse(char *buf, int32_t *integer, int32_t *fract,
 	if (p == NULL)
 		return -EINVAL;
 
-	*fract = strtol(p, NULL, 0);
+	*_fract = strtol(p, NULL, 0);
 
 	return 0;
 }
@@ -555,7 +555,7 @@ int32_t iio_parse_value(char *buf, enum iio_val fmt, int32_t *val,
 			int32_t *val2)
 {
 	int32_t ret = 0;
-	int32_t integer, fract = 0;
+	int32_t integer, _fract = 0;
 	char ch;
 
 	switch (fmt) {
@@ -563,22 +563,22 @@ int32_t iio_parse_value(char *buf, enum iio_val fmt, int32_t *val,
 		integer = strtol(buf, NULL, 0);
 		break;
 	case IIO_VAL_INT_PLUS_MICRO_DB:
-		ret = __iio_str_parse(buf, &integer, &fract, true);
+		ret = __iio_str_parse(buf, &integer, &_fract, true);
 		if (ret < 0)
 			return ret;
-		fract *= 100000;
+		_fract *= 100000;
 		break;
 	case IIO_VAL_INT_PLUS_MICRO:
-		ret = __iio_str_parse(buf, &integer, &fract, false);
+		ret = __iio_str_parse(buf, &integer, &_fract, false);
 		if (ret < 0)
 			return ret;
-		fract *= 100000;
+		_fract *= 100000;
 		break;
 	case IIO_VAL_INT_PLUS_NANO:
-		ret = __iio_str_parse(buf, &integer, &fract, false);
+		ret = __iio_str_parse(buf, &integer, &_fract, false);
 		if (ret < 0)
 			return ret;
-		fract *= 100000000;
+		_fract *= 100000000;
 		break;
 	case IIO_VAL_CHAR:
 		if (sscanf(buf, "%c", &ch) != 1)
@@ -592,7 +592,7 @@ int32_t iio_parse_value(char *buf, enum iio_val fmt, int32_t *val,
 	if (val)
 		*val = integer;
 	if (val2)
-		*val2 = fract;
+		*val2 = _fract;
 
 	return ret;
 }
@@ -608,27 +608,30 @@ ssize_t iio_format_value(char *buf, size_t len, enum iio_val fmt,
 
 	switch (fmt) {
 	case IIO_VAL_INT:
-		return snprintf(buf, len, "%d", vals[0]);
+		return snprintf(buf, len, "%"PRIi32"", vals[0]);
 	case IIO_VAL_INT_PLUS_MICRO_DB:
 		dB = true;
 	/* intentional fall through */
 	case IIO_VAL_INT_PLUS_MICRO:
-		return snprintf(buf, len, "%d.%06u%s", vals[0], vals[1],
-				dB ? " dB" : "");
+		return snprintf(buf, len, "%"PRIi32".%06"PRIu32"%s", vals[0],
+				(uint32_t)vals[1], dB ? " dB" : "");
 	case IIO_VAL_INT_PLUS_NANO:
-		return snprintf(buf, len, "%d.%09u", vals[0], vals[1]);
+		return snprintf(buf, len, "%"PRIi32".%09"PRIu32"", vals[0],
+				(uint32_t)vals[1]);
 	case IIO_VAL_FRACTIONAL:
 		tmp = div_s64((int64_t)vals[0] * 1000000000LL, vals[1]);
 		fractional = vals[1];
 		integer = (int32_t)div_s64_rem(tmp, 1000000000, &fractional);
-		return snprintf(buf, len, "%d.%09u", integer, abs(fractional));
+		return snprintf(buf, len, "%"PRIi32".%09u", integer,
+				abs(fractional));
 	case IIO_VAL_FRACTIONAL_LOG2:
 		tmp = shift_right((int64_t)vals[0] * 1000000000LL, vals[1]);
 		integer = (int32_t)div_s64_rem(tmp, 1000000000LL, &fractional);
-		return snprintf(buf, len, "%d.%09u", integer, abs(fractional));
+		return snprintf(buf, len, "%"PRIi32".%09u", integer,
+				abs(fractional));
 	case IIO_VAL_INT_MULTIPLE: {
 		while (i < size) {
-			l += snprintf(&buf[l], len - l, "%d ", vals[i]);
+			l += snprintf(&buf[l], len - l, "%"PRIi32" ", vals[i]);
 			if (l >= len)
 				break;
 			i++;
@@ -970,7 +973,7 @@ static ssize_t iio_read_dev(const char *device, char *pbuf, size_t offset,
 		if (offset + bytes_count > r_buff->size)
 			return -ENOMEM;
 
-		memcpy(pbuf, r_buff->buff + offset, bytes_count);
+		memcpy(pbuf, (char *)r_buff->buff + offset, bytes_count);
 
 		return bytes_count;
 	}
@@ -1026,7 +1029,7 @@ static ssize_t iio_write_dev(const char *device, const char *buf,
 	if (w_buff) {
 		if (offset + bytes_count > w_buff->size)
 			return -ENOMEM;
-		memcpy(w_buff->buff + offset, buf, bytes_count);
+		memcpy((char *)w_buff->buff + offset, buf, bytes_count);
 		return bytes_count;
 	}
 
@@ -1206,7 +1209,7 @@ static uint32_t iio_generate_device_xml(struct iio_device *device, char *name,
 							break;
 						}
 					}
-					i += snprintf(buff + i, max(n - i, 0), " />", attr->name);
+					i += snprintf(buff + i, max(n - i, 0), " />");
 				}
 
 			i += snprintf(buff + i, max(n - i, 0), "</channel>");

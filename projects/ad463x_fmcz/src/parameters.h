@@ -1,7 +1,7 @@
 /***************************************************************************//**
- *   @file   app_iio.h
- *   @brief  Application IIO setup.
- *   @author DBogdan (dragos.bogdan@analog.com)
+ *   @file   parameters.h
+ *   @brief  Parameters Definitions.
+ *   @author Antoniu Miclaus (antoniu.miclaus@analog.com)
 ********************************************************************************
  * Copyright 2020(c) Analog Devices, Inc.
  *
@@ -36,22 +36,24 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
-#ifndef APP_IIO_H_
-#define APP_IIO_H_
+#ifndef __PARAMETERS_H__
+#define __PARAMETERS_H__
 
 /******************************************************************************/
 /***************************** Include Files **********************************/
 /******************************************************************************/
-#include <stdint.h>
-#include "iio_axi_adc.h"
-#include "iio_axi_dac.h"
+#include <xparameters.h>
 
 /******************************************************************************/
-/************************ Functions Declarations ******************************/
+/********************** Macros and Constants Definitions **********************/
 /******************************************************************************/
+#define AD463x_DMA_BASEADDR             XPAR_AXI_AD463X_DMA_BASEADDR
+#define AD463x_SPI_ENGINE_BASEADDR      XPAR_SPI_AD463X_AXI_REGMAP_BASEADDR
+#define RX_CLKGEN_BASEADDR		XPAR_SPI_CLKGEN_BASEADDR
+#define AXI_PWMGEN_BASEADDR		XPAR_CNV_GENERATOR_BASEADDR
+#define AD463x_SPI_CS                   0
+#define GPIO_OFFSET			54
+#define GPIO_RESETN_1			GPIO_OFFSET + 32
+#define GPIO_DEVICE_ID			XPAR_PS7_GPIO_0_DEVICE_ID
 
-/* @brief Application IIO setup. */
-int32_t iio_server_init(struct iio_axi_adc_init_param *adc_init,
-			struct iio_axi_dac_init_param *dac_init);
-
-#endif
+#endif /* SRC_PARAMETERS_H_ */

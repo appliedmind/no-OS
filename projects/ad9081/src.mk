@@ -40,9 +40,9 @@ SRCS += $(DRIVERS)/frequency/adf4371/adf4371.c
 endif
 ifeq (y,$(strip $(TINYIIOD)))
 LIBRARIES += iio
-SRCS += $(PROJECT)/src/app_iio.c					\
+SRCS += $(NO-OS)/iio/iio_app/iio_app.c					\
 	$(PLATFORM_DRIVERS)/uart.c					\
-	$(PLATFORM_DRIVERS)/$(PLATFORM)_irq.c				\
+	$(PLATFORM_DRIVERS)/xilinx_irq.c				\
 	$(NO-OS)/util/list.c						\
 	$(NO-OS)/util/fifo.c						\
 	$(DRIVERS)/axi_core/iio_axi_adc/iio_axi_adc.c			\
@@ -52,7 +52,7 @@ endif
 INCS +=	$(PROJECT)/src/app_clock.h					\
 	$(PROJECT)/src/app_jesd.h					\
 	$(PROJECT)/src/app_config.h					\
-	$(PROJECT)/src/app_parameters.h					\
+	$(PROJECT)/src/parameters.h					\
 	$(DRIVERS)/adc/ad9081/ad9081.h					\
 	$(DRIVERS)/adc/ad9081/api/adi_ad9081_bf_ad9081.h		\
 	$(DRIVERS)/adc/ad9081/api/adi_ad9081_bf_impala_tc.h		\
@@ -94,13 +94,13 @@ ifeq (y,$(strip $(QUAD_MXFE)))
 INCS += $(DRIVERS)/frequency/adf4371/adf4371.h
 endif
 ifeq (y,$(strip $(TINYIIOD)))
-INCS += $(PROJECT)/src/app_iio.h					\
+INCS += $(NO-OS)/iio/iio_app/iio_app.h					\
 	$(INCLUDE)/uart.h						\
 	$(INCLUDE)/irq.h						\
 	$(PLATFORM_DRIVERS)/irq_extra.h					\
 	$(PLATFORM_DRIVERS)/uart_extra.h				\
 	$(INCLUDE)/fifo.h						\
 	$(INCLUDE)/list.h						\
-	$(DRIVERS)/axi_core/iio_axi_adc/iio_axi_adc.h				\
+	$(DRIVERS)/axi_core/iio_axi_adc/iio_axi_adc.h			\
 	$(DRIVERS)/axi_core/iio_axi_dac/iio_axi_dac.h
 endif

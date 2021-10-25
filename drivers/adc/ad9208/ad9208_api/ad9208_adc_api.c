@@ -581,13 +581,18 @@ int ad9208_adc_set_ddc_dcm(ad9208_handle_t *h, uint8_t ddc_ch, uint8_t dcm)
 	err = ad9208_register_write(h, AD9208_DDCX_CTRL0_REG + offset, tmp_reg);
 	if (err != API_ERROR_OK)
 		return err;
-	tmp_reg &= ~AD9208_DDCX_DCM_FILT_SEL_1(ALL);
-	tmp_reg |= AD9208_DDCX_DCM_FILT_SEL_1(filt_sel_reg_1);
-	err =
-		ad9208_register_write(h, AD9208_DDCX_DATA_SEL_REG + offset,
-				      tmp_reg);
+
+	err = ad9208_register_read(h, AD9208_DDCX_DATA_SEL_REG + offset, &tmp_reg);
 	if (err != API_ERROR_OK)
 		return err;
+
+	tmp_reg &= ~AD9208_DDCX_DCM_FILT_SEL_1(ALL);
+	tmp_reg |= AD9208_DDCX_DCM_FILT_SEL_1(filt_sel_reg_1);
+	err = ad9208_register_write(h, AD9208_DDCX_DATA_SEL_REG + offset,
+				    tmp_reg);
+	if (err != API_ERROR_OK)
+		return err;
+
 	return API_ERROR_OK;
 }
 
@@ -781,6 +786,10 @@ int ad9208_adc_set_ddc_nco(ad9208_handle_t *h, uint8_t ddc_ch,
 
 	if (h == NULL)
 		return API_ERROR_INVALID_HANDLE_PTR;
+
+	if (!carrier_freq_hz)
+		return API_ERROR_INVALID_PARAM;
+
 	if (!((carrier_freq_hz >= (int64_t) (0ll - h->adc_clk_freq_hz / 2)) &&
 	      (carrier_freq_hz < (int64_t) (h->adc_clk_freq_hz / 2))))
 		return API_ERROR_INVALID_PARAM;
